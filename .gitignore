@@ -1,0 +1,56 @@
+.git/
+
+config.py
+*.code-workspace
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# IDE / Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables (ВАЖНО: не коммитить реальные токены!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Docker (если используете локальные volumes)
+postgres_data/
