@@ -1,38 +1,179 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
-    <title>Mini App</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="styles/fonts/TTCommons/import-tt-commons.css">
-    <link rel="stylesheet" href="registration.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>MAX Календарь задач</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-container">
-        <form class="registration-form" action="/api/sendInitials" method="POST">
-            <h1>Представьтесь, пожалуйста</h1>
-            <div class="form-group">
-                <label for="surname">Фамилия:</label>
-                <input type="text" name="surname" class="form-control" placeholder="Гетманов">
-                <label for="surname">Имя:</label>
-                <input type="text" name="name" class="form-control" placeholder="Николай">
-                <label for="surname">Отчество:</label>
-                <input type="text" name="patronymic" class="form-control" placeholder="Николаевич">
-            </div>
-            <button type="submit" class="btn btn-primary">Подтвердить</button>
-        </form>
+  <div class="calendar-app">
+    <!-- Статус пользователя -->
+    <div class="user-status-bar">
+      <div class="user-role-badge admin" id="userRoleBadge">
+        <span id="userRoleText">Администратор</span>
+      </div>
+      <div class="user-name" id="userNameText">Анна Смирнова</div>
     </div>
+
+    <!-- Панель сотрудников (рендерится динамически) -->
+    <div class="employees-bar" id="employeesBar"></div>
+
+    <div class="week-navigation" id="weekNav">
+      <div class="week-range" id="weekRangeLabel"></div>
+      <div class="nav-buttons">
+        <button class="nav-btn" id="prevWeekBtn">← <span class="label">Назад</span></button>
+        <button class="nav-btn today" id="todayBtn"><span class="label">Текущая неделя</span></button>
+        <button class="nav-btn" id="nextWeekBtn"><span class="label">Вперёд</span> →</button>
+      </div>
+    </div>
+
+    <div class="toolbar-row">
+      <button class="add-task-global-btn" id="addTaskBtn">
+        <span class="plus">+</span> Новая задача
+      </button>
+      <button class="add-task-global-btn deadline-btn" id="addDeadlineBtn" style="display:none;">
+        <span class="plus">+</span> Новый дедлайн
+      </button>
+    </div>
+
+    <div class="calendar-wrapper" id="ganttContainer">
+      <div class="hours-column" id="hoursColumn"></div>
+      <div class="calendar-grid-container">
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+
+    <div class="all-hint" id="allHint">
+      <div class="all-hint-icon">🗓️</div>
+      <div class="all-hint-title">Выберите сотрудника</div>
+      <div class="all-hint-text">Чтобы увидеть календарь событий конкретного человека. Или включите режим «Дедлайны», чтобы увидеть сводку по всем.</div>
+    </div>
+
+    <div class="deadlines-view" id="deadlinesView" style="display:none;">
+      <div class="deadline-column">
+        <div class="column-title">Сделано</div>
+        <div class="column-body" data-col="done">
+          <div class="column-content" id="colDone"></div>
+        </div>
+      </div>
+      <div class="deadline-column">
+        <div class="column-title">В процессе</div>
+        <div class="column-body" data-col="in_progress">
+          <div class="column-content" id="colInProgress"></div>
+        </div>
+      </div>
+      <div class="deadline-column">
+        <div class="column-title">Будет сделано</div>
+        <div class="column-body" data-col="todo">
+          <div class="column-content" id="colTodo"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка задачи -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <button class="modal-close" id="modalCloseBtn" title="Закрыть">✕</button>
+      <h3 id="modalTitle">Новая задача</h3>
+      <div class="modal-subtitle" id="modalSubtitle"></div>
+
+      <div class="form-group" id="employeeSelectGroup">
+        <label>Сотрудники</label>
+        <div class="employee-select" id="employeeSelect">
+          <div class="employee-select-trigger" id="employeeSelectTrigger">
+            <span class="selected-text placeholder" id="employeeSelectLabel">Выберите сотрудников</span>
+            <span class="caret">▾</span>
+          </div>
+          <div class="employee-select-dropdown" id="employeeSelectDropdown"></div>
+        </div>
+        <div class="employee-static" id="employeeStatic" style="display:none;"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="taskTitleInput">Название задачи</label>
+        <input type="text" id="taskTitleInput" placeholder="Например: Созвон с командой" maxlength="80" autocomplete="off">
+      </div>
+
+      <div class="time-row">
+        <div class="form-group">
+          <label for="taskStartTime">Начало</label>
+          <input type="time" id="taskStartTime" step="900">
+        </div>
+        <div class="form-group">
+          <label for="taskEndTime">Конец</label>
+          <input type="time" id="taskEndTime" step="900">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Цвет задачи</label>
+        <div class="color-picker" id="colorPicker"></div>
+      </div>
+
+      <div class="important-toggle" id="importantToggle">
+        <div class="toggle-checkbox" id="toggleCheckbox">
+          <span id="toggleCheckIcon" style="display:none;">✓</span>
+        </div>
+        <div class="toggle-label"><span>⭐ Важная задача</span></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="deleteBtn" style="display:none;">Удалить</button>
+        <button class="btn btn-secondary" id="cancelBtn">Отмена</button>
+        <button class="btn btn-primary" id="saveBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модалка дедлайна -->
+  <div class="modal-overlay" id="deadlineModalOverlay">
+    <div class="modal" id="deadlineModal">
+      <button class="modal-close" id="deadlineModalCloseBtn" title="Закрыть">✕</button>
+      <h3>Новый дедлайн</h3>
+      <div class="modal-subtitle">Срок с точностью до минуты</div>
+
+      <div class="form-group">
+        <label for="deadlineTextInput">Название дедлайна</label>
+        <input type="text" id="deadlineTextInput" placeholder="Например: Сдать отчёт" maxlength="80" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="deadlineAtInput">Срок</label>
+        <input type="datetime-local" id="deadlineAtInput" step="60">
+      </div>
+
+      <div class="form-group">
+        <label>Сотрудники</label>
+        <div class="employee-select" id="dlEmployeeSelect">
+          <div class="employee-select-trigger" id="dlEmployeeSelectTrigger">
+            <span class="selected-text placeholder" id="dlEmployeeSelectLabel">Выберите сотрудников</span>
+            <span class="caret">▾</span>
+          </div>
+          <div class="employee-select-dropdown" id="dlEmployeeSelectDropdown"></div>
+        </div>
+      </div>
+
+      <div class="important-toggle" id="selectiveToggle">
+        <div class="toggle-checkbox" id="selectiveCheckbox">
+          <span id="selectiveCheckIcon" style="display:none;">✓</span>
+        </div>
+        <div class="toggle-label"><span>Выборочный — сотрудники разберут между собой</span></div>
+      </div>
+
+      <div class="form-group">
+        <label>Цвет дедлайна</label>
+        <div class="color-picker" id="deadlineColorPicker"></div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="deadlineCancelBtn">Отмена</button>
+        <button class="btn btn-primary" id="deadlineSaveBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
 </body>
 </html>
