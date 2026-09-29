@@ -4,15 +4,18 @@
 //   request(action, payload) → Promise<{ok, data | error, message, details}>
 //   сервер сам шлёт {type:'data_changed'} при любом изменении в организации
 //
-// Адрес по умолчанию: ws://<хост страницы или 127.0.0.1>:8000/ws.
-// Переопределить: index.html?ws=ws://192.168.1.42:8000/ws
+// Боевой адрес — бэкенд за Caddy (TLS) на сервере: wss://84-201-180-248.sslip.io/ws.
+// Страница открыта локально (localhost / 127.0.0.1 / file://) → ws://127.0.0.1:8000/ws.
+// Переопределить: index.html?ws=wss://другой-адрес/ws
 // ============================================================
+const PROD_WS_URL = 'wss://84-201-180-248.sslip.io/ws';
+
 const WS_URL = (() => {
   const override = new URLSearchParams(window.location.search).get('ws');
   if (override) return override;
-  const secure = window.location.protocol === 'https:';
-  const host = window.location.hostname || '127.0.0.1';      // file:// → пустой hostname
-  return `${secure ? 'wss' : 'ws'}://${host}:8000/ws`;
+  const host = window.location.hostname;
+  if (!host || host === 'localhost' || host === '127.0.0.1') return 'ws://127.0.0.1:8000/ws';
+  return PROD_WS_URL;
 })();
 
 const RequestTimeoutMs = 15000;
